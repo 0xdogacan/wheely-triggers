@@ -37,6 +37,7 @@ export default async function handler(req, res) {
       };
       await set(`rule:${id}`, rule);
       await addMember(`owner:${ownerToken}`, id);
+      await addMember('rules:all', id);
       const { ownerToken: ignored, ...publicRule } = rule;
       return res.status(201).json({ rule: publicRule, ownerToken });
     }
@@ -57,6 +58,7 @@ export default async function handler(req, res) {
       if (!rule || rule.ownerToken !== owner) return res.status(404).json({ error: 'Rule not found.' });
       await del(`rule:${id}`);
       await removeMember(`owner:${owner}`, id);
+      await removeMember('rules:all', id);
       return res.status(200).json({ deleted: true });
     }
     res.status(405).end();
