@@ -32,7 +32,7 @@ export default async function handler(req, res) {
       at: data.generatedAt || new Date().toISOString()
     };
     const previous = await get('state:latest');
-    await set('state:latest', current);
+    if (!current.running) current.idleSince = previous?.running ? Date.now() : (previous?.idleSince || Date.now());
     if (!previous) return res.status(200).json({ ok: true, primed: true, current });
 
     const ids = await members('rules:all');
@@ -45,8 +45,7 @@ export default async function handler(req, res) {
       if (rule.trigger === 'block' && current.height && previous.height && current.height !== previous.height) message = `🧱 New Squeek block: #${current.height}.`;
       if (rule.trigger === 'rpm' && current.rpm >= rule.threshold && previous.rpm < rule.threshold) message = `💨 Wheel RPM crossed ${rule.threshold}. Current RPM: ${current.rpm.toFixed(1)}.`;
       if (rule.trigger === 'sleep' && !current.running) {
-        const idleSince = previous.running ? Date.now() : Number(previous.idleSince || Date.now());
-        current.idleSince = idleSince;
+        const idleSince = Number(current.idleSince || Date.now());
         if (Date.now() - idleSince >= rule.sleepMinutes * 60000 && rule.lastFiredAt !== new Date(idleSince).toISOString()) {
           message = `🌙 Squeektoshi has been idle for ${rule.sleepMinutes}+ minutes.`;
           rule.lastFiredAt = new Date(idleSince).toISOString();
